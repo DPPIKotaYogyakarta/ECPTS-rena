@@ -1596,7 +1596,7 @@
                 }
 
                 return `
-                <div onclick="bukaDetailPesanan('${trId}')" class="bg-white/80 dark:bg-[#1C1C1E]/80 backdrop-blur-xl p-4 sm:p-5 rounded-[24px] shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col cursor-pointer hover:shadow-md hover:border-orange-500/30 transition-all group relative">
+                <div onclick="bukaDetailPesananModal('${trId}')" class="bg-white/80 dark:bg-[#1C1C1E]/80 backdrop-blur-xl p-4 sm:p-5 rounded-[24px] shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col cursor-pointer hover:shadow-md hover:border-orange-500/30 transition-all group relative">
                     <div class="flex justify-between items-start">
                         <div class="pr-2">
                             <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">${trId}</span>
@@ -1620,7 +1620,7 @@
             else container.innerHTML = `<div class="py-20 text-center text-slate-400 font-medium text-sm sm:text-base">Belum ada pesanan</div>`;
         }
 
-        function bukaDetailPesanan(idTrx) {
+        function bukaDetailPesananModal(idTrx) {
             const p = globalPenjualan.find(x => x['ID Transaksi'] == idTrx);
             if(!p) {
                 console.error("Kesalahan: Pesanan tidak ditemukan dengan ID", idTrx);
