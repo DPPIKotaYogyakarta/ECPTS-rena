@@ -1716,13 +1716,22 @@
                 `;
             }
 
-            let varDetailHtml = "-";
+           let varDetailHtml = "-";
             try {
-                const varObj = JSON.parse(p['Varian Detail']);
-                if(Array.isArray(varObj)) { 
-                    varDetailHtml = `<ul class="list-disc list-inside text-xs text-slate-500 ml-4 mt-1">` + varObj.map(v => `<li>${v.opsi1||v.ukuran} - ${v.opsi2||v.lengan} (x${v.jumlah})</li>`).join('') + `</ul>`;
-                } else if (varObj.opsi1 || varObj.ukuran) { 
-                    varDetailHtml = `<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded text-[10px] font-bold inline-block mt-1">${varObj.opsi1||varObj.ukuran} - ${varObj.opsi2||varObj.lengan}</span>`;
+                const varObj = JSON.parse(trx['Varian Detail']);
+                if (Array.isArray(varObj)) {
+                    if (varObj.length > 0 && varObj[0].nama_menu) {
+                        // JIKA PESANAN MULTI MENU (KERANJANG)
+                        varDetailHtml = `<ul class="list-disc list-inside text-xs text-slate-400 dark:text-zinc-400 ml-4 mt-1">` + varObj.map(c => {
+                            let vars = c.varian.map(v => `${v.opsi1||v.ukuran}-${v.opsi2||v.lengan} (x${v.jumlah})`).join(', ');
+                            return `<li><b class="text-orange-500">${c.nama_menu}</b>: ${vars}</li>`;
+                        }).join('') + `</ul>`;
+                    } else {
+                        // JIKA PESANAN 1 MENU
+                        varDetailHtml = `<ul class="list-disc list-inside text-xs text-slate-400 dark:text-zinc-400 ml-4 mt-1">` + varObj.map(v => `<li>${v.opsi1||v.ukuran} - ${v.opsi2||v.lengan} (x${v.jumlah})</li>`).join('') + `</ul>`;
+                    }
+                } else if (varObj.opsi1 || varObj.ukuran) {
+                    varDetailHtml = `<span class="bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 px-2 py-0.5 rounded text-[10px] font-bold inline-block mt-1">${varObj.opsi1||varObj.ukuran} - ${varObj.opsi2||varObj.lengan}</span>`;
                 }
             } catch(e){}
 
@@ -1822,14 +1831,20 @@
                 metodePelunasan = " " + String(p['Status Pembayaran']).substring(String(p['Status Pembayaran']).indexOf('('));
             }
 
-            let varDetailStr = "-";
+          let varDetailStr = "-";
             try {
                 const varObj = JSON.parse(p['Varian Detail']);
                 if(Array.isArray(varObj)) { 
-                    varDetailStr = varObj.map(v => `${v.opsi1||v.ukuran}-${v.opsi2||v.lengan}(${v.jumlah})`).join(', ');
-                } else if (varObj.opsi1 || varObj.ukuran) { 
-                    varDetailStr = `${varObj.opsi1||varObj.ukuran} - ${varObj.opsi2||varObj.lengan}`;
-                }
+                    if(varObj.length > 0 && varObj[0].nama_menu) {
+                        varDetailStr = varObj.map(c => {
+                            let vars = c.varian.map(v => `${v.opsi1||v.ukuran}-${v.opsi2||v.lengan}(${v.jumlah})`).join(', ');
+                            return `<b>${c.nama_menu}</b><br><span style="font-size:11px">${vars}</span>`;
+                        }).join('<br><br>');
+                    } else {
+                        varDetailStr = varObj.map(v => `${v.opsi1||v.ukuran}-${v.opsi2||v.lengan}(${v.jumlah})`).join(', '); 
+                    }
+                } 
+                else if (varObj.opsi1 || varObj.ukuran) { varDetailStr = `${varObj.opsi1||varObj.ukuran} - ${varObj.opsi2||varObj.lengan}`; }
             } catch(e){}
 
             const printLogoUrl = appSettings.logo_light || appSettings.logo_dark || '';
