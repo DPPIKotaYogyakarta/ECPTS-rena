@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Waroeng Dapur Joglo</title>
+    <title>Sedap Raya Resto</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -72,7 +72,7 @@
 
     <script>
         // MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZl0XlsKFcGh5OpCfWF74BzcNZeb7r_UFvqQCd2c9am5WpNrgDwIc4-CXbBXUpSQayjA/exec'; 
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz96KqoJCjOXvKnmzNaPd9_4bEy_d7DHY4lx_kGs9g1atbS-r_SbpxJdMkgx6rnyEAn9Q/exec'; 
     </script>
 
     <!-- LOADING SCREEN -->
@@ -218,6 +218,12 @@
                         <button onclick="showFavorites()" class="text-slate-500 hover:text-red-500 active:scale-90 transition-all" title="Favorit Saya">
                             <i class="fa-solid fa-heart text-[20px] sm:text-[22px]"></i>
                         </button>
+                        
+                        <button id="nav-keranjang-icon" onclick="toggleModalKeranjang()" class="text-slate-500 hover:text-orange-500 active:scale-90 transition-all relative" title="Keranjang">
+                            <i class="fa-solid fa-cart-shopping text-[20px] sm:text-[22px]"></i>
+                            <span id="badge-cart-count" class="absolute -top-1.5 -right-2 bg-red-500 text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white dark:border-[#2C2C2E] shadow-sm hidden transition-transform duration-300">0</span>
+                        </button>
+                        
                         <button id="nav-cart-icon" onclick="showPesanan()" class="text-slate-500 hover:text-orange-500 active:scale-90 transition-all relative" title="Pesanan Saya">
                             <i class="fa-solid fa-clipboard-list text-[20px] sm:text-[22px]"></i>
                             <span id="badge-pesanan-count" class="absolute -top-1.5 -right-2 bg-red-500 text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white dark:border-[#2C2C2E] shadow-sm hidden transition-transform duration-300">0</span>
@@ -357,7 +363,7 @@
             </div>
             
             <footer class="text-slate-400 dark:text-slate-600 py-8 text-center mt-auto font-medium text-xs sm:text-sm safe-pb relative z-10">
-                <p>&copy; Waroeng Dapur Joglo. Kualitas Terjaga.</p>
+                <p>&copy; 2026 Sedap Raya Resto. Kualitas Terjaga.</p>
             </footer>
 
             <div id="wa-fab-container" class="fixed bottom-6 right-6 sm:bottom-10 sm:right-10 z-50">
@@ -474,6 +480,28 @@
                 </div>
 
                 <button onclick="submitCustomOrder()" id="btn-submit-custom" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold py-4 rounded-full active:scale-[0.98] transition-all text-[15px] sm:text-[17px] shadow-lg shadow-emerald-500/30">Kirim & Chat Admin</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL KERANJANG BELANJA -->
+    <div id="modal-keranjang" class="modal opacity-0 pointer-events-none fixed inset-0 flex items-end sm:items-center justify-center z-[80] transition-opacity duration-300">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="toggleModalKeranjang()"></div>
+        <div class="modal-sheet bg-white dark:bg-[#1C1C1E] w-full sm:w-11/12 sm:max-w-md mx-auto rounded-t-[32px] sm:rounded-[40px] shadow-2xl z-[85] h-[85vh] sm:max-h-[85vh] flex flex-col relative safe-pb">
+            <div class="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mt-4 mb-2 sm:hidden shrink-0"></div>
+            <div class="px-5 sm:px-6 py-3 flex justify-between items-center shrink-0 border-b border-slate-100 dark:border-slate-800">
+                <p class="text-lg sm:text-2xl font-bold text-black dark:text-white tracking-tight"><i class="fa-solid fa-cart-shopping mr-2 text-orange-500"></i>Keranjang</p>
+                <button onclick="toggleModalKeranjang()" class="text-slate-400 hover:text-black dark:hover:text-white bg-slate-100 dark:bg-[#2C2C2E] w-8 h-8 rounded-full flex items-center justify-center transition-colors"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="px-5 sm:px-6 overflow-y-auto hide-scrollbar scroll-touch flex-1 py-4 space-y-4" id="list-keranjang-ui">
+                <!-- Isi keranjang akan di-render di sini -->
+            </div>
+            <div class="px-5 sm:px-6 py-4 border-t border-slate-100 dark:border-slate-800 shrink-0">
+                <div class="flex justify-between items-end mb-4">
+                    <span class="text-sm font-bold text-slate-500">Total Belanja:</span>
+                    <span class="text-xl sm:text-2xl font-black text-orange-500" id="total-harga-keranjang">Rp 0</span>
+                </div>
+                <button onclick="lanjutCheckout()" id="btn-lanjut-checkout" class="w-full bg-orange-500 text-white font-bold py-4 rounded-full active:scale-[0.98] transition-all text-sm sm:text-base shadow-lg shadow-orange-500/30">Lanjut ke Checkout</button>
             </div>
         </div>
     </div>
@@ -686,9 +714,135 @@
         let zoomImages = [];
         let zoomIdx = 0;
         let currentDetailId = null;
-        let currentTrxPrint = null;
+        let currentTrxPrint = null; 
         let currentDetailVars = []; 
         let selectedDetailVars = {}; 
+
+        // VARIABEL KERANJANG BARU
+        let cart = [];
+
+        function addToCart(id, nama, arrPilihan, totalPrice, totalQty, gambar) {
+            cart.push({
+                id_menu: id,
+                nama_menu: nama,
+                varian: arrPilihan,
+                total_harga: totalPrice,
+                total_qty: totalQty,
+                gambar: gambar
+            });
+            updateCartBadge();
+            tampilkanToast("Menu masuk keranjang!");
+            
+            // Animasi ke keranjang
+            const imgEl = document.getElementById('dtl-gambar-utama');
+            const sourceRect = imgEl.getBoundingClientRect(); 
+            animateToCartIcon(sourceRect, gambar);
+
+            // Kembali ke katalog
+            setTimeout(() => { hideAllSections(); document.getElementById('sec-home').classList.remove('hidden'); }, 500);
+        }
+
+        function updateCartBadge() {
+            const badge = document.getElementById('badge-cart-count');
+            const totalItems = cart.reduce((sum, item) => sum + item.total_qty, 0);
+            badge.textContent = totalItems;
+            badge.classList.toggle('hidden', totalItems === 0);
+        }
+
+        function toggleModalKeranjang() {
+            if (requireLogin()) return;
+            const modal = document.getElementById('modal-keranjang');
+            if(modal.classList.contains('opacity-0')) { 
+                renderKeranjang();
+                modal.classList.remove('opacity-0', 'pointer-events-none'); 
+                setTimeout(() => modal.classList.add('show'), 10); 
+                document.querySelector('body').classList.add('modal-active'); 
+            } else { 
+                modal.classList.remove('show'); 
+                setTimeout(() => { modal.classList.add('opacity-0', 'pointer-events-none'); document.querySelector('body').classList.remove('modal-active'); }, 300); 
+            }
+        }
+
+        function renderKeranjang() {
+            const listUI = document.getElementById('list-keranjang-ui');
+            let grandTotal = 0;
+            
+            if (cart.length === 0) {
+                listUI.innerHTML = `<div class="text-center py-10"><i class="fa-solid fa-basket-shopping text-4xl text-slate-300 dark:text-slate-600 mb-3"></i><p class="text-slate-400 font-bold">Keranjang Anda masih kosong</p></div>`;
+                document.getElementById('btn-lanjut-checkout').disabled = true;
+                document.getElementById('btn-lanjut-checkout').className = "w-full bg-slate-300 text-slate-500 font-bold py-4 rounded-full transition-all text-sm cursor-not-allowed";
+            } else {
+                listUI.innerHTML = cart.map((item, index) => {
+                    grandTotal += item.total_harga;
+                    let varText = item.varian.map(v => `${v.opsi1}-${v.opsi2} (x${v.jumlah})`).join(', ');
+                    return `
+                    <div class="flex gap-3 bg-[#F2F2F7] dark:bg-[#2C2C2E] p-3 rounded-2xl relative">
+                        <img src="${item.gambar}" class="w-16 h-16 rounded-xl object-cover shrink-0">
+                        <div class="flex-1 overflow-hidden">
+                            <h4 class="font-bold text-sm text-black dark:text-white truncate">${item.nama_menu}</h4>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate mb-1">${varText}</p>
+                            <p class="font-black text-orange-500 text-sm">${formatRp(item.total_harga)}</p>
+                        </div>
+                        <button onclick="hapusItemKeranjang(${index})" class="absolute top-2 right-2 w-6 h-6 bg-red-100 text-red-500 rounded-full flex justify-center items-center hover:bg-red-200 active:scale-90"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                    </div>`;
+                }).join('');
+                document.getElementById('btn-lanjut-checkout').disabled = false;
+                document.getElementById('btn-lanjut-checkout').className = "w-full bg-orange-500 text-white font-bold py-4 rounded-full active:scale-[0.98] transition-all text-sm sm:text-base shadow-lg shadow-orange-500/30";
+            }
+            document.getElementById('total-harga-keranjang').textContent = formatRp(grandTotal);
+        }
+
+        function hapusItemKeranjang(index) {
+            cart.splice(index, 1);
+            updateCartBadge();
+            renderKeranjang();
+        }
+
+        function lanjutCheckout() {
+            toggleModalKeranjang();
+            let grandTotal = cart.reduce((sum, item) => sum + item.total_harga, 0);
+            let grandQty = cart.reduce((sum, item) => sum + item.total_qty, 0);
+            
+            bukaModalBeliMulti(
+                "MULTI", 
+                `Pesanan Multi (${cart.length} Jenis Menu)`, 
+                cart, 
+                grandTotal, 
+                grandQty, 
+                "https://cdn-icons-png.flaticon.com/512/3081/3081840.png"
+            );
+        }
+
+        function animateToCartIcon(sourceRect, imgUrl) {
+            const cartIcon = document.getElementById('nav-keranjang-icon'); 
+            if (!cartIcon) return;
+
+            const iconRect = cartIcon.getBoundingClientRect();
+            const ghost = document.createElement('img');
+            ghost.src = imgUrl;
+            ghost.className = 'fixed z-[9999] rounded-[16px] object-cover shadow-2xl border-2 border-orange-500';
+            ghost.style.left = sourceRect.left + 'px';
+            ghost.style.top = sourceRect.top + 'px';
+            ghost.style.width = sourceRect.width + 'px';
+            ghost.style.height = sourceRect.height + 'px';
+            ghost.style.transition = 'all 0.8s cubic-bezier(0.5, -0.5, 0.2, 1.5)';
+            ghost.style.pointerEvents = 'none';
+            document.body.appendChild(ghost);
+            
+            const deltaX = (iconRect.left + iconRect.width/2) - (sourceRect.left + sourceRect.width/2);
+            const deltaY = (iconRect.top + iconRect.height/2) - (sourceRect.top + sourceRect.height/2);
+            
+            requestAnimationFrame(() => {
+                ghost.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(0.05) rotate(15deg)`;
+                ghost.style.opacity = '0.5'; ghost.style.borderRadius = '50%';
+            });
+            
+            setTimeout(() => {
+                ghost.remove();
+                cartIcon.classList.add('scale-125', 'text-orange-500');
+                setTimeout(() => cartIcon.classList.remove('scale-125', 'text-orange-500'), 400);
+            }, 800);
+        }
 
         document.addEventListener('click', function(e) {
             const container = document.getElementById('wa-fab-container');
@@ -1330,12 +1484,12 @@
             if(totalQty > 0) {
                 btnBeli.disabled = false;
                 btnBeli.className = "w-full bg-orange-600 text-white py-4 sm:py-5 rounded-full font-bold text-base sm:text-lg shadow-xl shadow-orange-600/30 active:scale-[0.98] transition-all";
-                btnBeli.textContent = `Checkout (${totalQty} Porsi - ${formatRp(totalPrice)})`;
+                btnBeli.textContent = `Masukkan Keranjang (${totalQty} Porsi - ${formatRp(totalPrice)})`;
                 btnBeli.onclick = () => {
                     if (requireLogin()) return; 
                     const p = globalProduk.find(x => (x.ID || x.id) == currentDetailId);
                     const mainImg = String(p['URL Gambar'] || p.gambar || '').split(',')[0];
-                    bukaModalBeliMulti(p.ID || p.id, p['Nama Menu'] || p.nama, arrPilihan, totalPrice, totalQty, mainImg);
+                    addToCart(p.ID || p.id, p['Nama Menu'] || p.nama, arrPilihan, totalPrice, totalQty, mainImg);
                 };
             } else {
                 btnBeli.disabled = true;
@@ -1816,7 +1970,7 @@
                         </div>
 
                         <div class="footer">
-                            <p style="font-weight: 600; color: #6b7280; font-size: 14px;">Terima kasih atas pesanan Anda di Waroeng Dapur Joglo.</p>
+                            <p style="font-weight: 600; color: #6b7280; font-size: 14px;">Terima kasih atas pesanan Anda di Sedap Raya Resto.</p>
                             <p>Tunjukkan nomor antrian Anda kepada staf kami saat mengambil hidangan.</p>
                         </div>
                     </div>
@@ -1906,10 +2060,21 @@
             document.getElementById('m-varian-array-json').value = JSON.stringify(arrPilihan);
             
             const listVarianUi = document.getElementById('m-varian-list-checkout');
-            listVarianUi.innerHTML = arrPilihan.map(v => {
-                const title = (v.opsi1 === "Default" && v.opsi2 === "Default") ? "Standar" : `${v.opsi1}-${v.opsi2}`;
-                return `<div class="flex justify-between items-center text-[11px] sm:text-xs"><span class="font-bold text-slate-700 dark:text-slate-300"><i class="fa-solid fa-check text-orange-500 mr-1.5"></i>${title}</span> <span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold">x${v.jumlah}</span></div>`;
-            }).join('');
+            if (id === "MULTI") {
+                // Tampilan Untuk Mode Keranjang Belanja
+                listVarianUi.innerHTML = arrPilihan.map(c => 
+                    `<div class="flex justify-between items-center text-[10px] sm:text-xs mb-1 border-b border-slate-200 dark:border-slate-700 pb-1">
+                        <div><span class="font-bold text-slate-700 dark:text-slate-300"><i class="fa-solid fa-utensils text-orange-500 mr-1.5"></i>${c.nama_menu}</span><br><span class="text-[8px] text-slate-500">${c.varian.map(v => v.opsi1).join(', ')}</span></div>
+                        <span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold whitespace-nowrap">${formatRp(c.total_harga)}</span>
+                    </div>`
+                ).join('');
+            } else {
+                // Tampilan Langsung Beli (Fallback/Custom)
+                listVarianUi.innerHTML = arrPilihan.map(v => {
+                    const title = (v.opsi1 === "Default" && v.opsi2 === "Default") ? "Standar" : `${v.opsi1}-${v.opsi2}`;
+                    return `<div class="flex justify-between items-center text-[11px] sm:text-xs"><span class="font-bold text-slate-700 dark:text-slate-300"><i class="fa-solid fa-check text-orange-500 mr-1.5"></i>${title}</span> <span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold">x${v.jumlah}</span></div>`;
+                }).join('');
+            }
             
             buktiBase64 = ""; pelunasanBase64 = ""; 
             document.getElementById('m-bukti').value = ""; document.getElementById('m-bukti-preview').classList.add('hidden'); document.getElementById('m-bukti-icon').style.display = 'block';
@@ -2108,42 +2273,6 @@
             } else { qris.src = appSettings.qris_lunas || 'https://via.placeholder.com/250?text=Admin+Belum+Set+QRIS+Lunas'; document.getElementById('m-totalharga').textContent = formatRp(t); }
         }
 
-        function animateToCart(sourceRect, imgUrl) {
-            const cartIcon = document.getElementById('nav-cart-icon'); 
-            if (!cartIcon) { showPesanan(); return; }
-
-            const iconRect = cartIcon.getBoundingClientRect();
-            
-            const ghost = document.createElement('img');
-            ghost.src = imgUrl;
-            ghost.className = 'fixed z-[9999] rounded-[16px] object-cover shadow-2xl border-2 border-orange-500';
-            ghost.style.left = sourceRect.left + 'px';
-            ghost.style.top = sourceRect.top + 'px';
-            ghost.style.width = sourceRect.width + 'px';
-            ghost.style.height = sourceRect.height + 'px';
-            
-            ghost.style.transition = 'all 0.8s cubic-bezier(0.5, -0.5, 0.2, 1.5)';
-            ghost.style.pointerEvents = 'none';
-            
-            document.body.appendChild(ghost);
-            
-            const deltaX = (iconRect.left + iconRect.width/2) - (sourceRect.left + sourceRect.width/2);
-            const deltaY = (iconRect.top + iconRect.height/2) - (sourceRect.top + sourceRect.height/2);
-            
-            requestAnimationFrame(() => {
-                ghost.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(0.05) rotate(15deg)`;
-                ghost.style.opacity = '0.5';
-                ghost.style.borderRadius = '50%';
-            });
-            
-            setTimeout(() => {
-                ghost.remove();
-                cartIcon.classList.add('scale-125', 'text-orange-500', 'animate-pulse');
-                setTimeout(() => cartIcon.classList.remove('scale-125', 'text-orange-500', 'animate-pulse'), 400);
-                showPesanan(); 
-            }, 800);
-        }
-
         async function prosesBeli(e) {
             e.preventDefault(); 
             const metode = document.querySelector('input[name="metode_bayar"]:checked').value; 
@@ -2183,14 +2312,19 @@
                 
                 if(data.status === 'success') { 
                     toggleCheckoutModal(); 
+                    
+                    // Reset Keranjang Setelah Berhasil Beli
+                    cart = [];
+                    updateCartBadge();
+
                     fetchKatalog(true); 
                     fetchPesananCustomer(true); 
                     
                     tampilkanToast(`Pesanan Sukses! No. Antrian: ${data.no_antrian}`);
                     
                     setTimeout(() => {
-                        animateToCart(sourceRect, gambarUrl);
-                    }, 300); 
+                        showPesanan();
+                    }, 500); 
 
                 } else {
                     alert(data.message);
