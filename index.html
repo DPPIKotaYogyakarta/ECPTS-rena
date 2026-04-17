@@ -1569,10 +1569,10 @@
                 
                 
                // MULTI-CART PARSING FIX
-                let nm = p['Nama Menu'] || p['Nama Baju'];
+                let nm = trx['Nama Menu'] || trx['Nama Baju'];
                 let varDetailHtml = "";
                 try {
-                    let rawVar = p['Varian Detail'] || "";
+                    let rawVar = trx['Varian Detail'] || "";
                     let varObj = typeof rawVar === 'string' ? JSON.parse(rawVar) : rawVar;
                     
                     if (Array.isArray(varObj)) {
@@ -1692,9 +1692,9 @@
 
            // MULTI-CART PARSING FIX
             let varDetailHtml = "-";
-            let nmDisplay = p['Nama Menu'] || p['Nama Baju'];
+            let nmDisplay = trx['Nama Menu'] || trx['Nama Baju'];
             try {
-                let rawVar = p['Varian Detail'] || "";
+                let rawVar = trx['Varian Detail'] || "";
                 let varObj = typeof rawVar === 'string' ? JSON.parse(rawVar) : rawVar;
                 
                 if (Array.isArray(varObj)) {
