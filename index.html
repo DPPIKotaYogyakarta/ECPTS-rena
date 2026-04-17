@@ -748,6 +748,34 @@
             updateCartBadge();
             renderKeranjang();
         }
+        
+        // FUNGSI BARU YANG DITAMBAHKAN - MEMBUKA CHECKOUT UNTUK BANYAK ITEM (KERANJANG)
+        function bukaModalBeliMulti(tipe, namaPalsu, cartData, totalHarga, totalQty, gambarUrl) {
+            document.getElementById('m-id').value = tipe;
+            document.getElementById('m-total-base').value = totalHarga;
+            document.getElementById('m-total-qty').value = totalQty;
+            document.getElementById('m-varian-array-json').value = JSON.stringify(cartData);
+
+            document.getElementById('m-nama').textContent = namaPalsu;
+            document.getElementById('m-harga').textContent = formatRp(totalHarga);
+            document.getElementById('m-gambar').src = gambarUrl || 'https://via.placeholder.com/150';
+
+            const listUI = document.getElementById('m-varian-list-checkout');
+            listUI.innerHTML = cartData.map(item => {
+                let varText = item.varian.map(v => `${v.opsi1}-${v.opsi2}(x${v.jumlah})`).join(', ');
+                return `<div class="text-[10px] sm:text-xs"><span class="font-bold text-orange-500">${item.nama_menu}</span>: ${varText}</div>`;
+            }).join('');
+
+            // Reset forms
+            document.getElementById('form-beli').reset();
+            buktiBase64 = "";
+            document.getElementById('m-bukti-preview').classList.add('hidden');
+            document.getElementById('m-bukti-icon').style.display = 'block';
+
+            toggleDPUI();
+            hitungTotalModal();
+            toggleCheckoutModal();
+        }
 
         function lanjutCheckout() {
             toggleModalKeranjang();
@@ -1192,6 +1220,150 @@
             if(modal.classList.contains('opacity-0')) { modal.classList.remove('opacity-0', 'pointer-events-none'); setTimeout(() => modal.classList.add('show'), 10); body.classList.add('modal-active'); } 
             else { modal.classList.remove('show'); setTimeout(() => { modal.classList.add('opacity-0', 'pointer-events-none'); body.classList.remove('modal-active'); }, 300); }
         }
+        
+        // FUNGSI BARU YANG DITAMBAHKAN - TOGGLE MODAL DETAIL PESANAN
+        function toggleModalDetailPesanan() {
+            const modal = document.getElementById('modal-detail-pesanan');
+            const body = document.querySelector('body');
+            if(modal.classList.contains('opacity-0')) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                setTimeout(() => modal.classList.add('show'), 10);
+                body.classList.add('modal-active');
+            } else {
+                modal.classList.remove('show');
+                setTimeout(() => { modal.classList.add('opacity-0', 'pointer-events-none'); body.classList.remove('modal-active'); }, 300);
+            }
+        }
+        function tutupDetailPesanan() {
+            toggleModalDetailPesanan();
+        }
+        
+        // FUNGSI BARU YANG DITAMBAHKAN - PESANAN CUSTOM
+        function toggleModalCustom() {
+            const modal = document.getElementById('modal-custom');
+            const body = document.querySelector('body');
+            if(modal.classList.contains('opacity-0')) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                setTimeout(() => modal.classList.add('show'), 10);
+                body.classList.add('modal-active');
+            } else {
+                modal.classList.remove('show');
+                setTimeout(() => { modal.classList.add('opacity-0', 'pointer-events-none'); body.classList.remove('modal-active'); }, 300);
+            }
+        }
+
+        function bukaModalCustom() {
+            document.getElementById('mc-kat').selectedIndex = 0;
+            document.getElementById('mc-varian-list').innerHTML = '';
+            document.getElementById('mc-desc').value = '';
+            fileCustomBase64 = "";
+            document.getElementById('mc-file-preview').classList.add('hidden');
+            document.getElementById('mc-file-icon').style.display = 'block';
+            document.getElementById('mc-file-name').textContent = "Pilih File";
+            customVarianCount = 0;
+            addVarianCustom(); 
+            toggleModalCustom();
+        }
+
+        let customVarianCount = 0;
+        function addVarianCustom() {
+            customVarianCount++;
+            const div = document.createElement('div');
+            div.className = "flex gap-2 items-center";
+            div.id = `mc-var-row-${customVarianCount}`;
+            div.innerHTML = `
+                <input type="text" placeholder="Nama Paket / Item" class="mc-var-nama flex-1 bg-white dark:bg-[#1C1C1E] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                <input type="number" placeholder="Qty" class="mc-var-qty w-20 bg-white dark:bg-[#1C1C1E] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                <button onclick="document.getElementById('mc-var-row-${customVarianCount}').remove()" class="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center shrink-0"><i class="fa-solid fa-trash text-xs"></i></button>
+            `;
+            document.getElementById('mc-varian-list').appendChild(div);
+        }
+
+        function submitCustomOrder() {
+            if(!currentUser) {
+                alert("Silakan login terlebih dahulu.");
+                toggleModalCustom();
+                return requireLogin();
+            }
+
+            const kat = document.getElementById('mc-kat').value;
+            const desc = document.getElementById('mc-desc').value;
+
+            let varianList = [];
+            document.querySelectorAll('#mc-varian-list > div').forEach(row => {
+                const n = row.querySelector('.mc-var-nama').value;
+                const q = row.querySelector('.mc-var-qty').value;
+                if(n && q) varianList.push(`- ${n} (${q} porsi)`);
+            });
+
+            if(varianList.length === 0) return alert("Tambahkan minimal 1 rincian paket & porsi!");
+
+            let waNumbers = appSettings.admin_wa ? String(appSettings.admin_wa).split(',') : ["6281234567890"];
+            let adminWa = formatWaNumber(waNumbers[0]);
+
+            let text = `*PESANAN CUSTOM / KATERING*\n\nNama: ${currentUser.nama_lengkap}\nKategori: ${kat}\n\n*Rincian Paket:*\n${varianList.join('\n')}\n\n*Catatan Tambahan:*\n${desc || '-'}\n\nMohon dihitung total biaya dan ketersediaannya. Terima kasih!`;
+
+            if(fileCustomBase64) text += `\n\n_(Saya telah melampirkan file referensi. Karena keterbatasan sistem, saya akan mengirimkan file tersebut secara manual setelah pesan ini)_`;
+
+            window.open(`https://wa.me/${adminWa}?text=${encodeURIComponent(text)}`, '_blank');
+            toggleModalCustom();
+        }
+        
+        // FUNGSI BARU YANG DITAMBAHKAN - BAYAR TAGIHAN TERTUNDA
+        function toggleModalBayar() {
+            const modal = document.getElementById('modal-bayar-tagihan');
+            const body = document.querySelector('body');
+            if(modal.classList.contains('opacity-0')) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                setTimeout(() => modal.classList.add('show'), 10);
+                body.classList.add('modal-active');
+            } else {
+                modal.classList.remove('show');
+                setTimeout(() => { modal.classList.add('opacity-0', 'pointer-events-none'); body.classList.remove('modal-active'); }, 300);
+            }
+        }
+
+        function bukaModalBayarTagihan(id, nominal) {
+            document.getElementById('mbt-id').value = id;
+            document.getElementById('mbt-info').textContent = formatRp(nominal);
+            buktiBayarTagihanBase64 = "";
+            document.getElementById('mbt-bukti-preview').classList.add('hidden');
+            document.getElementById('mbt-bukti-icon').style.display = 'block';
+            toggleModalBayar();
+        }
+
+        async function submitBayarTagihan() {
+            if(!buktiBayarTagihanBase64) return alert("Silakan upload bukti transfer terlebih dahulu.");
+            const idTrx = document.getElementById('mbt-id').value;
+            const btn = document.getElementById('btn-submit-tagihan');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: "updateBuktiPelunasan",
+                        id_transaksi: idTrx,
+                        bukti_pelunasan: buktiBayarTagihanBase64 
+                    }),
+                    headers: { 'Content-Type': 'text/plain' }
+                });
+                const data = await res.json();
+                if(data.status === 'success') {
+                    alert('Bukti pembayaran berhasil dikirim!');
+                    toggleModalBayar();
+                    fetchPesananCustomer(true);
+                } else {
+                    alert(data.message);
+                }
+            } catch(err) {
+                alert('Gagal mengirim bukti pembayaran.');
+            } finally {
+                btn.innerHTML = 'Kirim Bukti';
+                btn.disabled = false;
+            }
+        }
 
         function openZoom(imageString, startIdx = 0) {
             zoomImages = imageString.split(',').filter(url => url.trim() !== ""); zoomIdx = startIdx;
@@ -1500,6 +1672,7 @@
             }
         }
 
+        // BUG YANG DIPERBAIKI: Mengubah "trx" menjadi "p" agar tidak menyebabkan Reference Error
         function renderTabelPesanan() {
             const container = document.getElementById('list-pesanan-customer'); 
             const badge = document.getElementById('badge-pesanan-count');
@@ -1567,12 +1740,11 @@
 
                 const noAntrian = p['Nomor Antrian'] || '-';
                 
-                
-               // MULTI-CART PARSING FIX
-                let nm = trx['Nama Menu'] || trx['Nama Baju'];
+                // MULTI-CART PARSING FIX
+                let nm = p['Nama Menu'] || p['Nama Baju'];
                 let varDetailHtml = "";
                 try {
-                    let rawVar = trx['Varian Detail'] || "";
+                    let rawVar = p['Varian Detail'] || "";
                     let varObj = typeof rawVar === 'string' ? JSON.parse(rawVar) : rawVar;
                     
                     if (Array.isArray(varObj)) {
@@ -1690,11 +1862,11 @@
                 `;
             }
 
-           // MULTI-CART PARSING FIX
+            // MULTI-CART PARSING FIX
             let varDetailHtml = "-";
-            let nmDisplay = trx['Nama Menu'] || trx['Nama Baju'];
+            let nmDisplay = p['Nama Menu'] || p['Nama Baju'];
             try {
-                let rawVar = trx['Varian Detail'] || "";
+                let rawVar = p['Varian Detail'] || "";
                 let varObj = typeof rawVar === 'string' ? JSON.parse(rawVar) : rawVar;
                 
                 if (Array.isArray(varObj)) {
@@ -1806,7 +1978,7 @@
                 `;
             }
 
-           // MULTI-CART PARSING FIX FOR PRINT
+            // MULTI-CART PARSING FIX FOR PRINT
             let tbodyRows = "";
             let nm = p['Nama Menu'] || p['Nama Baju'];
             try {
@@ -1893,7 +2065,6 @@
             `); printWindow.document.close();
         }
 
-        // ... existing upload script logic below ...
         function prosesUploadPelunasan(event, idTrx) {
             const file = event.target.files[0]; if(!file) return;
             const loader = document.getElementById(`loading_${idTrx}`); loader.classList.remove('hidden');
@@ -2025,10 +2196,6 @@
             
             const namaBaju = document.getElementById('m-nama').textContent;
             
-            const imgEl = document.getElementById('m-gambar');
-            const gambarUrl = imgEl.src;
-            const sourceRect = imgEl.getBoundingClientRect(); 
-
             const payload = { 
                 action: "addPenjualan", 
                 username: currentUser.username, 
@@ -2056,7 +2223,7 @@
                     fetchKatalog(true); 
                     fetchPesananCustomer(true); 
                     
-                    tampilkanToast(`Pesanan Sukses! No. Antrian: ${data.no_antrian}`);
+                    tampilkanToast(`Pesanan Sukses! No. Antrian: ${data.no_antrian || '-'}`);
                     
                     setTimeout(() => {
                         showPesanan();
